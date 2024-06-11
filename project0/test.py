@@ -63,6 +63,14 @@ def check_tqdm():
         log(red("FAIL"), "tqdm not installed")
 
 
+def check_pandas():
+    try:
+        import pandas
+        log(green("PASS"), "pandas installed")
+    except ModuleNotFoundError:
+        log(red("FAIL"), "pandas not installed")
+
+
 def main():
     try:
         check_numpy()
@@ -70,6 +78,7 @@ def main():
         check_matplotlib()
         check_torch()
         check_tqdm()
+        check_pandas()
     except Exception:
         log_exit(traceback.format_exc())
 
