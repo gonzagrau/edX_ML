@@ -217,7 +217,7 @@ def pegasos_single_step_update(feature_vector: np.ndarray,
         completed.
     """
     leeway = label*(theta.T @ feature_vector + theta_0)
-    if leeway < 1 or np.isclose(leeway, 1): # more precise <=
+    if leeway < 1 and not np.isclose(leeway, 1): # more precise <=
         theta = (1 - eta*L)*theta + eta*label*feature_vector
         theta_0 = theta_0 + eta*label
     else:
@@ -302,8 +302,8 @@ def classify(feature_matrix, theta, theta_0):
         given theta and theta_0. If a prediction is GREATER THAN zero, it
         should be considered a positive classification.
     """
-    # Your code here
-    raise NotImplementedError
+    leeway = feature_matrix @ theta + theta_0
+    return 2*(leeway > 0 + np.isclose(leeway, 0)) - 1 # map from [0,1] to [-1, 1]
 
 
 def classifier_accuracy(
@@ -339,8 +339,14 @@ def classifier_accuracy(
         trained classifier on the training data and the second element is the
         accuracy of the trained classifier on the validation data.
     """
-    # Your code here
-    raise NotImplementedError
+    theta, theta_0 = classifier(train_feature_matrix, train_labels, **kwargs)
+    tr_predict = classify(train_feature_matrix, theta, theta_0)
+    tr_acc = accuracy(tr_predict, train_labels)
+
+    val_predict = classify(val_feature_matrix, theta, theta_0)
+    val_acc = accuracy(val_predict, val_labels)
+
+    return  tr_acc, val_acc
 
 
 
@@ -353,16 +359,13 @@ def extract_words(text):
         a list of lowercased words in the string, where punctuation and digits
         count as their own words.
     """
-    # Your code here
-    raise NotImplementedError
-
     for c in punctuation + digits:
         text = text.replace(c, ' ' + c + ' ')
     return text.lower().split()
 
 
 
-def bag_of_words(texts, remove_stopword=False):
+def bag_of_words(texts, check_stopword=True):
     """
     NOTE: feel free to change this code as guided by Section 3 (e.g. remove
     stopwords, add bigrams etc.)
@@ -373,22 +376,24 @@ def bag_of_words(texts, remove_stopword=False):
         a dictionary that maps each word appearing in `texts` to a unique
         integer `index`.
     """
-    # Your code here
-    raise NotImplementedError
-    
+    if check_stopword:
+        with open('stopwords.txt', 'r') as f:
+            stopwords = [word.strip('\n') for word in f.readlines()]
+    else:
+        stopwords = []
     indices_by_word = {}  # maps word to unique index
     for text in texts:
         word_list = extract_words(text)
         for word in word_list:
             if word in indices_by_word: continue
-            if word in stopword: continue
+            if word in stopwords: continue
             indices_by_word[word] = len(indices_by_word)
 
     return indices_by_word
 
 
 
-def extract_bow_feature_vectors(reviews, indices_by_word, binarize=True):
+def extract_bow_feature_vectors(reviews, indices_by_word, binarize=False):
     """
     Args:
         `reviews` - a list of natural language strings
@@ -406,13 +411,12 @@ def extract_bow_feature_vectors(reviews, indices_by_word, binarize=True):
             if word not in indices_by_word: continue
             feature_matrix[i, indices_by_word[word]] += 1
     if binarize:
-        # Your code here
-        raise NotImplementedError
+        feature_matrix = feature_matrix > 0
     return feature_matrix
 
 
 
-def accuracy(preds, targets):
+def accuracy(preds: np.ndarray, targets: np.ndarray) -> float:
     """
     Given length-N vectors containing predicted and target labels,
     returns the fraction of predictions that are correct.
