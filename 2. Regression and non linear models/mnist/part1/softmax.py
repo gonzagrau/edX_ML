@@ -82,22 +82,19 @@ def run_gradient_descent_iteration(X, Y, theta, alpha, lambda_factor, temp_param
     h = compute_probabilities(X, theta, temp_parameter)
     n, d = X.shape
     k = theta.shape[0]
-    labels = np.arange(k)
-    Y_idx = np.arange(n)  # list of indeces in Y
-    Y_ones = np.ones_like(Y)
 
-    dLoss = np.zeros_like(theta)
-    for m in range(k):
-        Y_m = Y_ones * (Y == m)
-        loss_cum = np.zeros(d, dtype=theta.dtype)
-        for i in range(n):
-             loss_cum += X[i, :]*(Y_m[i] - h[m, i])
-        dLoss[m, :] = -loss_cum
+    # M[i, j] == 1 if Y[j] == i else 0
+    M = np.zeros_like(h)
+    Y_idx = np.arange(n)
+    M[Y, Y_idx] = 1
 
-    dLoss /= (temp_parameter*n)
-    dRegu = lambda_factor*theta
-    dJ = dLoss + dRegu
-    return theta - alpha*dJ
+    # now, compute loss and regulatization
+    i_ntemp = 1./ (temp_parameter*n)
+    dLoss_dth = - (M - h) @ X * i_ntemp
+    dRegu_dth = lambda_factor*theta
+    dJ_dth = dLoss_dth + dRegu_dth
+
+    return theta - alpha*dJ_dth
 
 
 def update_y(train_y, test_y):
@@ -117,8 +114,7 @@ def update_y(train_y, test_y):
         test_y_mod3 - (n, ) NumPy array containing the new labels (a number between 0-2)
                     for each datapoint in the test set
     """
-    #YOUR CODE HERE
-    raise NotImplementedError
+    return train_y%3, test_y%3
 
 def compute_test_error_mod3(X, Y, theta, temp_parameter):
     """
@@ -135,8 +131,9 @@ def compute_test_error_mod3(X, Y, theta, temp_parameter):
     Returns:
         test_error - the error rate of the classifier (scalar)
     """
-    #YOUR CODE HERE
-    raise NotImplementedError
+    Y_pred = get_classification(X, theta, temp_parameter)
+    Y_true, Y_est = Y % 3, Y_pred % 3
+    return 1 - np.mean(Y_true == Y_est)
 
 def softmax_regression(X, Y, temp_parameter, alpha, lambda_factor, k, num_iterations):
     """
