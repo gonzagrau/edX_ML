@@ -8,7 +8,8 @@ from svm import *
 from softmax import *
 from features import *
 from kernel import *
-from sklearn.svm import LinearSVC
+from sklearn.svm import LinearSVC, SVC
+from sklearn.metrics import accuracy_score
 
 #######################################################################
 # 1. Introduction
@@ -194,16 +195,29 @@ pcs = principal_components(train_x_centered)
 train_pca = project_onto_PC(train_x, pcs, n_components, feature_means)
 test_pca = project_onto_PC(test_x, pcs, n_components, feature_means)
 
-print('Extracting cubic features...')
-train_cubic_pca = cubic_features(train_pca)
-test_cubic_pca = cubic_features(test_pca)
-print('Training the model...')
-theta_pca_cubic, _ = softmax_regression(train_cubic_pca, train_y, temp_parameter,
-                                          alpha=0.3,
-                                          lambda_factor=1.0e-4,
-                                          k=10,
-                                          num_iterations=150)
-print('Computing error...')
-test_err_cubic = compute_test_error(test_cubic_pca, test_y, theta_pca_cubic, temp_parameter=1.)
-print(f"PCA softmax test error with {n_components=}: {test_err_cubic}")
+# print('Extracting cubic features...')
+# train_cubic_pca = cubic_features(train_pca)
+# test_cubic_pca = cubic_features(test_pca)
+# print('Training the model...')
+# theta_pca_cubic, _ = softmax_regression(train_cubic_pca, train_y, temp_parameter,
+#                                           alpha=0.3,
+#                                           lambda_factor=1.0e-4,
+#                                           k=10,
+#                                           num_iterations=150)
+# print('Computing error...')
+# test_err_cubic = compute_test_error(test_cubic_pca, test_y, theta_pca_cubic, temp_parameter=1.)
+# print(f"PCA softmax test error with {n_components=}: {test_err_cubic}")
+print('Fitting cubic SVM...')
+cubic_SVM = SVC(kernel="poly", degree=3, random_state=0)
+cubic_SVM.fit(train_pca, train_y)
+
+y_pred_cub = cubic_SVM.predict(test_pca)
+print(f'Test accuracy: {1 - accuracy_score(test_y, y_pred_cub):.4f}')
+
+print('Fitting gaussian SVM...')
+gauss_SVM = SVC(kernel="rbf", random_state=0)
+gauss_SVM.fit(train_pca, train_y)
+
+y_pred_gauss = gauss_SVM.predict(test_pca)
+print(f'Test accuracy: {1 - accuracy_score(test_y, y_pred_gauss):.4f}')
 
