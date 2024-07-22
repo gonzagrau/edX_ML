@@ -12,22 +12,29 @@ import math
         One output neuron whose activation function is the identity function.
 """
 
-
+@np.vectorize
 def rectified_linear_unit(x):
     """ Returns the ReLU of x, or the maximum between 0 and x."""
-    # TODO
+    return max(0, x)
 
+
+@np.vectorize
 def rectified_linear_unit_derivative(x):
     """ Returns the derivative of ReLU."""
-    # TODO
+    return int(x > 0)
 
+
+@np.vectorize
 def output_layer_activation(x):
     """ Linear function, returns input as is. """
     return x
 
+
+@np.vectorize
 def output_layer_activation_derivative(x):
     """ Returns the derivative of a linear function: 1. """
     return 1
+
 
 class NeuralNetwork():
     """
