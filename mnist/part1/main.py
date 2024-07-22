@@ -104,7 +104,7 @@ def run_softmax_on_MNIST(temp_parameter: float=1.):
     plot_cost_function_over_time(cost_function_history)
     test_error = compute_test_error(test_x, test_y, theta, temp_parameter)
     # Save the model parameters theta obtained from calling softmax_regression to disk.
-    write_pickle_data(theta, "./theta.pkl.gz")
+    write_pickle_data(theta, "theta.pkl.gz")
 
     test_error = compute_test_error_mod3(test_x, test_y, theta, temp_parameter)
     return test_error
@@ -138,7 +138,7 @@ def run_softmax_on_MNIST_mod3(temp_parameter=1.):
     plot_cost_function_over_time(cost_function_history)
     test_error = compute_test_error(test_x, test_y, theta, temp_parameter)
     # Save the model parameters theta obtained from calling softmax_regression to disk.
-    write_pickle_data(theta, "./theta.pkl.gz")
+    write_pickle_data(theta, "theta.pkl.gz")
 
     test_error = compute_test_error_mod3(test_x, test_y, theta, temp_parameter)
     return test_error
