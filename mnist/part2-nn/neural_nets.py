@@ -1,5 +1,5 @@
 import numpy as np
-import math
+from typing import Tuple
 
 """
  ==================================
@@ -18,25 +18,25 @@ def cost(y, t):
 def cost_prime(y, t):
     return -(y-t)
 
-# @np.vectorize
+@np.vectorize
 def rectified_linear_unit(x):
     """ Returns the ReLU of x, or the maximum between 0 and x."""
     return max(0, x)
 
 
-# @np.vectorize
+@np.vectorize
 def rectified_linear_unit_derivative(x):
     """ Returns the derivative of ReLU."""
     return int(x > 0)
 
 
-# @np.vectorize
+@np.vectorize
 def output_layer_activation(x):
     """ Linear function, returns input as is. """
     return x
 
 
-# @np.vectorize
+@np.vectorize
 def output_layer_activation_derivative(x):
     """ Returns the derivative of a linear function: 1. """
     return 1
@@ -52,41 +52,51 @@ class NeuralNetwork():
     """
 
     def __init__(self):
-
-        # DO NOT CHANGE PARAMETERS (Initialized to floats instead of ints)
-        self.input_to_hidden_weights = np.matrix('1. 1.; 1. 1.; 1. 1.')
-        self.hidden_to_output_weights = np.matrix('1. 1. 1.')
-        self.biases = np.matrix('0.; 0.; 0.')
+        # DO NOT CHANGE PARAMETERS
+        self.input_to_hidden_weights = np.ones((3, 2), float)
+        self.hidden_activation = rectified_linear_unit
+        self.hidden_act_deriv = rectified_linear_unit_derivative
+        self.hidden_to_output_weights = np.ones((1, 3), float)
+        self.biases = np.zeros((3, 1), float)
+        self.output_activation = output_layer_activation
+        self.output_act_deriv = output_layer_activation_derivative
         self.learning_rate = .001
         self.epochs_to_train = 10
-        self.training_points = [((2,1), 10), ((3,3), 21), ((4,5), 32), ((6, 6), 42)]
-        self.testing_points = [(1,1), (2,2), (3,3), (5,5), (10,10)]
+        self.training_points = [(np.array([[2],[1]]), 10),
+                                (np.array([[3],[3]]), 21),
+                                (np.array([[4],[5]]), 32),
+                                (np.array([[6],[6]]), 42)]
+        self.testing_points = [np.array([[1],[1]]),
+                               np.array([[2],[2]]), np.array([[3],[3]]), np.array([[5],[5]]), np.array([[10],[10]])]
 
-    def train(self, x1, x2, y):
-        ### vectorized functions
-        vec_relu = np.vectorize(rectified_linear_unit)
-        vec_relu_derivative = np.vectorize(rectified_linear_unit_derivative)
 
-        ### Forward propagation ###
-        input_values = np.array([[x1], [x2]])  # 2 by 1
-
+    def _forward_prop(self, input_values) -> Tuple[np.ndarray, np.ndarray, np.ndarray, np.ndarray]:
+        ### Forward propagation step for prediction and training ###
         # Calculate the input and activation of the hidden layer
-        hidden_layer_weighted_input = np.array(self.input_to_hidden_weights @ input_values + self.biases)
-        hidden_layer_activation = vec_relu(hidden_layer_weighted_input)
+        hidden_layer_weighted_input = self.input_to_hidden_weights @ input_values + self.biases
+        hidden_layer_activation = self.hidden_activation(hidden_layer_weighted_input)
 
-        output = np.array(np.dot(self.hidden_to_output_weights, hidden_layer_activation))
-        activated_output = output_layer_activation(output)
+        output = np.dot(self.hidden_to_output_weights, hidden_layer_activation)
+        activated_output = self.output_activation(output)
+
+        return hidden_layer_weighted_input, hidden_layer_activation, output, activated_output
+
+    def train(self, input_values, y):
+        """
+        Performs backpropagation gradient descent on a single input
+        """
+        # input_values = np.array([[x1], [x2]])  # 2 by 1
+        hidden_layer_weighted_input, hidden_layer_activation, output, activated_output = self._forward_prop(input_values)
 
         ### Backpropagation ###
 
         # Compute gradients
         mat_inputs = np.repeat(input_values.T, self.input_to_hidden_weights.shape[0], axis=0)
-        output_layer_error = np.array(
-            (activated_output - y) * output_layer_activation_derivative(activated_output))  # 1x1
-        hidden_layer_error = np.array(output_layer_error * self.hidden_to_output_weights)  # 1x3
+        output_layer_error = (activated_output - y) * self.output_act_deriv(activated_output)  # 1x1
+        hidden_layer_error = output_layer_error * self.hidden_to_output_weights # 1x3
 
         hidden_to_output_weight_gradients = output_layer_error * hidden_layer_activation.T  # 1x3
-        bias_gradients = hidden_layer_error.T * vec_relu_derivative(hidden_layer_activation)  # 3x1
+        bias_gradients = hidden_layer_error.T * self.hidden_act_deriv(hidden_layer_activation)  # 3x1
         input_to_hidden_weight_gradients = bias_gradients * mat_inputs  # 3x2
 
         # Use gradients to adjust weights and biases using gradient descent
@@ -94,43 +104,36 @@ class NeuralNetwork():
         self.input_to_hidden_weights -= self.learning_rate * input_to_hidden_weight_gradients
         self.hidden_to_output_weights -= self.learning_rate * hidden_to_output_weight_gradients
 
-    def predict(self, x1, x2):
-        ### vectorized functions
-        vec_relu = np.vectorize(rectified_linear_unit)
-        vec_relu_derivative = np.vectorize(rectified_linear_unit_derivative)
-        vec_out_activation = np.vectorize(output_layer_activation)
-
-        input_values = np.matrix([[x1],[x2]])
-
-        # Compute output for a single input(should be same as the forward propagation in training)
-        hidden_layer_weighted_input = self.input_to_hidden_weights @ input_values + self.biases
-        hidden_layer_activation = vec_relu(hidden_layer_weighted_input)
-        output =  np.dot(self.hidden_to_output_weights, hidden_layer_activation)
-        activated_output = vec_out_activation(output)
-
+    def predict(self, input_values):
+        ### Returns predicted output
+        # input_values = np.array([[x1], [x2]])
+        _, _, _, activated_output = self._forward_prop(input_values)
         return activated_output.item()
 
-    # Run this to train your neural network once you complete the train method
-    def train_neural_network(self):
 
+    def train_neural_network(self):
+        # Run this to train your neural network once you complete the train method
         for epoch in range(self.epochs_to_train):
             for x,y in self.training_points:
-                self.train(x[0], x[1], y)
+                self.train(x, y)
 
-    # Run this to test your neural network implementation for correctness after it is trained
+
     def test_neural_network(self):
-
+        # Run this to test your neural network implementation for correctness after it is trained
         for point in self.testing_points:
-            print("Point,", point, "Prediction,", self.predict(point[0], point[1]))
-            if abs(self.predict(point[0], point[1]) - 7*point[0]) < 0.1:
+            print("Point,", point.reshape(2), "Prediction,", self.predict(point))
+            if abs(self.predict(point) - 7*point[0]) < 0.1:
                 print("Test Passed")
             else:
-                print("Point ", point[0], point[1], " failed to be predicted correctly.")
+                print("Point ", point.reshape(2), " failed to be predicted correctly.")
                 return
 
-x = NeuralNetwork()
 
-x.train_neural_network()
+def main():
+    x = NeuralNetwork()
+    x.train_neural_network()
+    x.test_neural_network()
 
-# UNCOMMENT THE LINE BELOW TO TEST YOUR NEURAL NETWORK
-x.test_neural_network()
+
+if __name__ == '__main__':
+    main()
