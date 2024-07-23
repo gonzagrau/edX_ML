@@ -68,7 +68,7 @@ class NeuralNetwork():
         vec_relu_derivative = np.vectorize(rectified_linear_unit_derivative)
 
         ### Forward propagation ###
-        input_values = np.array([[x1],[x2]]) # 2 by 1
+        input_values = np.array([[x1], [x2]])  # 2 by 1
 
         # Calculate the input and activation of the hidden layer
         hidden_layer_weighted_input = np.array(self.input_to_hidden_weights @ input_values + self.biases)
@@ -81,17 +81,18 @@ class NeuralNetwork():
 
         # Compute gradients
         mat_inputs = np.repeat(input_values.T, self.input_to_hidden_weights.shape[0], axis=0)
-        output_layer_error = np.array((activated_output - y)*output_layer_activation_derivative(activated_output)) # 1x1
-        hidden_layer_error = np.array(output_layer_error*self.hidden_to_output_weights)  # 1x3
+        output_layer_error = np.array(
+            (activated_output - y) * output_layer_activation_derivative(activated_output))  # 1x1
+        hidden_layer_error = np.array(output_layer_error * self.hidden_to_output_weights)  # 1x3
 
-        hidden_to_output_weight_gradients = output_layer_error*hidden_layer_activation.T # 1x3
-        bias_gradients = hidden_layer_error * vec_relu_derivative(hidden_layer_activation).T # 3x1
-        input_to_hidden_weight_gradients = bias_gradients.T * mat_inputs # 3x2
+        hidden_to_output_weight_gradients = output_layer_error * hidden_layer_activation.T  # 1x3
+        bias_gradients = hidden_layer_error.T * vec_relu_derivative(hidden_layer_activation)  # 3x1
+        input_to_hidden_weight_gradients = bias_gradients * mat_inputs  # 3x2
 
         # Use gradients to adjust weights and biases using gradient descent
-        self.biases -= self.learning_rate*bias_gradients
-        self.input_to_hidden_weights -= self.learning_rate*input_to_hidden_weight_gradients
-        self.hidden_to_output_weights -= self.learning_rate*hidden_to_output_weight_gradients.T
+        self.biases -= self.learning_rate * bias_gradients
+        self.input_to_hidden_weights -= self.learning_rate * input_to_hidden_weight_gradients
+        self.hidden_to_output_weights -= self.learning_rate * hidden_to_output_weight_gradients
 
     def predict(self, x1, x2):
         ### vectorized functions
