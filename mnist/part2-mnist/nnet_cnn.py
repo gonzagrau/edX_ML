@@ -46,11 +46,11 @@ def main():
         nn.Conv2d(1, 32, (3, 3)),
         nn.ReLU(),
         nn.MaxPool2d((2, 2)),
-        nn.Conv2d(1, 64, (3, 3)),
+        nn.Conv2d(32, 64, (3, 3)),
         nn.ReLU(),
         nn.MaxPool2d((2, 2)),
         nn.Flatten(),
-        nn.Linear(128, 128),
+        nn.Linear(1600, 128),
         torch.nn.Dropout(p=0.5),
         nn.Linear(128, 10)
     )
